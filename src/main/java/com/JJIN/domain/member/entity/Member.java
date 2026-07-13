@@ -1,25 +1,49 @@
 package com.JJIN.domain.member.entity;
 
+import com.JJIN.domain.member.entity.enums.Role;
+
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+@Builder
+@Table(name = "member")
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
 public class Member {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
     private String email;
 
+    @Column
     private String password;
 
-    private Enum language;
+    @Column
+    private String socialId;
 
-    private Enum missionLevel;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Role role;
 
-    private Enum travelType;
+    public static Member create(
+        final String email,
+        final String password,
+        final Role role
+    ) {
+        return Member.builder()
+            .email(email)
+            .password(password)
+            .role(role)
+            .build();
+    }
+
 }
