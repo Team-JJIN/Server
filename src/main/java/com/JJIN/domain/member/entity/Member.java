@@ -46,4 +46,16 @@ public class Member {
             .build();
     }
 
+    public static Member createSocialMember(
+        final String email,
+        final String socialId,
+        final Role role
+    ) {
+        return Member.builder()
+            .email(email)
+            .socialId(socialId)
+            .role(role)
+            .build();
+    }
+
 }
