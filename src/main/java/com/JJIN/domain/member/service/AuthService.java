@@ -1,7 +1,6 @@
 package com.JJIN.domain.member.service;
 
 import java.util.List;
-import java.util.Optional;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
@@ -12,11 +11,13 @@ import com.JJIN.domain.member.dto.response.AuthTokenResponse;
 import com.JJIN.domain.member.dto.response.ReissueResponse;
 import com.JJIN.domain.member.entity.Member;
 import com.JJIN.domain.member.entity.enums.Role;
+import com.JJIN.domain.member.exception.MemberErrorCode;
 import com.JJIN.domain.member.repository.MemberRepository;
 import com.JJIN.global.auth.jwt.JwtTokenProvider;
 import com.JJIN.global.auth.oauth.GoogleOAuthClient;
 import com.JJIN.global.auth.oauth.dto.GoogleUserInfo;
 import com.JJIN.global.auth.security.MemberAuthentication;
+import com.JJIN.global.exception.JjinException;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -39,15 +40,23 @@ public class AuthService {
 	public AuthTokenResponse loginWithGoogle(final GoogleLoginRequest request) {
 		GoogleUserInfo userInfo = googleOAuthClient.getUserInfo(request.code());
 
-		Optional<Member> existingMember = memberRepository.findBySocialId(userInfo.sub());
-		Member member = existingMember.orElseGet(() -> registerNewMember(userInfo));
-		boolean isNewMember = existingMember.isEmpty();
+		Member member = memberRepository.findBySocialId(userInfo.sub())
+			.orElseGet(() -> registerNewMember(userInfo));
 
-		String accessToken = jwtTokenProvider.issueAccessToken(toAuthentication(member));
-		String refreshToken = jwtTokenProvider.issueRefreshToken(toAuthentication(member));
-		memberTokenService.saveRefreshToken(member.getId(), refreshToken);
+		return issueTokens(member);
+	}
 
-		return AuthTokenResponse.of(accessToken, refreshToken, isNewMember);
+	/**
+	 * 유저의 role을 member로 업데이트하고 액세스/리프레쉬 토큰을 재발급한다.
+	 */
+	@Transactional
+	public AuthTokenResponse changeRoleToMember(final Long memberId) {
+		Member member = memberRepository.findById(memberId)
+			.orElseThrow(() -> new JjinException(MemberErrorCode.MEMBER_NOT_FOUND));
+
+		member.changeRole(Role.MEMBER);
+
+		return issueTokens(member);
 	}
 
 	/**
@@ -65,10 +74,19 @@ public class AuthService {
 		memberTokenService.deleteRefreshToken(memberId);
 	}
 
+	private AuthTokenResponse issueTokens(final Member member) {
+		Authentication authentication = toAuthentication(member);
+		String accessToken = jwtTokenProvider.issueAccessToken(authentication);
+		String refreshToken = jwtTokenProvider.issueRefreshToken(authentication);
+		memberTokenService.saveRefreshToken(member.getId(), refreshToken);
+
+		return AuthTokenResponse.of(accessToken, refreshToken, member.getRole());
+	}
+
 	private Member registerNewMember(final GoogleUserInfo userInfo) {
 		log.info("신규 구글 회원 가입: socialId={}, email={}", userInfo.sub(), userInfo.email());
 		return memberRepository.save(
-			Member.createSocialMember(userInfo.email(), userInfo.sub(), Role.MEMBER)
+			Member.createSocialMember(userInfo.email(), userInfo.sub(), Role.ONBOARDING)
 		);
 	}
 

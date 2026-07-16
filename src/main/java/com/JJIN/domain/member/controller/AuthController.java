@@ -1,6 +1,7 @@
 package com.JJIN.domain.member.controller;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -33,9 +34,18 @@ public class AuthController {
 		@Valid @RequestBody GoogleLoginRequest request
 	) {
 		AuthTokenResponse response = authService.loginWithGoogle(request);
-		MemberSuccessCode successCode = response.isNewMember() ? MemberSuccessCode.SIGNUP_SUCCESS : MemberSuccessCode.LOGIN_SUCCESS;
-		return ResponseEntity.status(successCode.getHttpStatus())
-			.body(SuccessResponse.of(successCode, response));
+		return ResponseEntity.ok(SuccessResponse.of(MemberSuccessCode.LOGIN_SUCCESS, response));
+	}
+
+	@PatchMapping("/role")
+	public ResponseEntity<SuccessResponse<AuthTokenResponse>> changeRoleToMember(
+		@CurrentMember CurrentAuth currentAuth
+	) {
+		if (currentAuth == null) {
+			throw new JjinException(TokenErrorCode.INVALID_AUTHORIZATION_HEADER);
+		}
+		AuthTokenResponse response = authService.changeRoleToMember(currentAuth.memberId());
+		return ResponseEntity.ok(SuccessResponse.of(MemberSuccessCode.ROLE_CHANGE_SUCCESS, response));
 	}
 
 	@PostMapping("/reissue")

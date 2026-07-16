@@ -17,6 +17,7 @@ public enum MemberSuccessCode implements BaseCode {
 	LOGIN_SUCCESS(HttpStatus.OK, "로그인에 성공했습니다."),
 	REISSUE_SUCCESS(HttpStatus.OK, "액세스 토큰 재발급에 성공했습니다."),
 	LOGOUT_SUCCESS(HttpStatus.OK, "로그아웃에 성공했습니다."),
+	ROLE_CHANGE_SUCCESS(HttpStatus.OK, "role 변경에 성공했습니다."),
 
 	/*
 	201 CREATED
