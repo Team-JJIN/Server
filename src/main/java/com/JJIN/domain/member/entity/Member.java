@@ -58,4 +58,7 @@ public class Member {
             .build();
     }
 
+    public void changeRole(final Role role) {
+        this.role = role;
+    }
 }
