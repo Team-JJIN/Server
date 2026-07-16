@@ -1,16 +1,18 @@
 package com.JJIN.domain.member.dto.response;
 
+import com.JJIN.domain.member.entity.enums.Role;
+
 public record AuthTokenResponse(
 	String accessToken,
 	String refreshToken,
-	boolean isNewMember
+	Role role
 ) {
 
 	public static AuthTokenResponse of(
 		final String accessToken,
 		final String refreshToken,
-		final boolean isNewMember
+		final Role role
 	) {
-		return new AuthTokenResponse(accessToken, refreshToken, isNewMember);
+		return new AuthTokenResponse(accessToken, refreshToken, role);
 	}
 }
