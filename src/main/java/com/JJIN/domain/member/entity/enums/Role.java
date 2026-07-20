@@ -1,11 +1,15 @@
 package com.JJIN.domain.member.entity.enums;
 
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 @Getter
 @RequiredArgsConstructor
 public enum Role {
+	ONBOARDING("ROLE_ONBOARDING"),
 	MEMBER("ROLE_MEMBER"),
 	ADMIN("ROLE_ADMIN"),
 	;
@@ -20,4 +24,9 @@ public enum Role {
 		}
 		return null;
 	}
+
+	public GrantedAuthority toGrantedAuthority() {
+		return new SimpleGrantedAuthority(roleName);
+	}
+
 }
