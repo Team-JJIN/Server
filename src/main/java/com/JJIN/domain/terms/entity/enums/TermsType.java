@@ -7,8 +7,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public enum TermsType {
 
-	SERVICE("이용약관 및 개인정보 처리방침", true),
-	MARKETING("마케팅 정보 수신 동의(선택)", false),
+	SERVICE("이용약관 및 개인정보 처리방침 (필수)", true),
+	MARKETING("마케팅 정보 수신 동의 (선택)", false),
 	;
 
 	private final String title;
