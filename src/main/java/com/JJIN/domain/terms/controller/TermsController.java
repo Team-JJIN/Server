@@ -15,7 +15,7 @@ import com.JJIN.global.response.dto.SuccessResponse;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/api/auth/terms")
+@RequestMapping("/api/terms")
 @RequiredArgsConstructor
 public class TermsController {
 
