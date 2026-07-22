@@ -31,6 +31,8 @@ public class SecurityConfig {
             "/api/auth/login/**",
             "/api/auth/reissue",
             "/api/auth/email/**",
+            "/api/auth/signup",
+            "/api/terms",
             "/actuator/health"
     };
 

@@ -4,10 +4,6 @@
 # EC2에는 deploy.yml이 docker-compose.yml만 복사하므로 이 파일이 적용되지 않습니다
 # (운영에서는 app이 내부 네트워크로 mysql에 직접 접근하므로 포트 개방 불필요).
 services:
-  mysql:
-    ports:
-      - "127.0.0.1:3306:3306"
-
   redis:
     ports:
       - "127.0.0.1:6379:6379"

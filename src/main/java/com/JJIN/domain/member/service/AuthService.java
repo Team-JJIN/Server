@@ -3,16 +3,21 @@ package com.JJIN.domain.member.service;
 import java.util.List;
 
 import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.JJIN.domain.member.dto.request.EmailSignupRequest;
 import com.JJIN.domain.member.dto.request.GoogleLoginRequest;
+import com.JJIN.domain.member.dto.request.LoginRequest;
 import com.JJIN.domain.member.dto.response.AuthTokenResponse;
 import com.JJIN.domain.member.dto.response.ReissueResponse;
 import com.JJIN.domain.member.entity.Member;
 import com.JJIN.domain.member.entity.enums.Role;
 import com.JJIN.domain.member.exception.MemberErrorCode;
 import com.JJIN.domain.member.repository.MemberRepository;
+import com.JJIN.domain.terms.service.TermsService;
+import com.JJIN.global.auth.email.EmailVerificationCodeStore;
 import com.JJIN.global.auth.jwt.JwtTokenProvider;
 import com.JJIN.global.auth.oauth.GoogleOAuthClient;
 import com.JJIN.global.auth.oauth.dto.GoogleUserInfo;
@@ -31,6 +36,9 @@ public class AuthService {
 	private final MemberRepository memberRepository;
 	private final MemberTokenService memberTokenService;
 	private final JwtTokenProvider jwtTokenProvider;
+	private final PasswordEncoder passwordEncoder;
+	private final EmailVerificationCodeStore emailVerificationCodeStore;
+	private final TermsService termsService;
 
 	/**
 	 * 구글 소셜 로그인. 인가 코드로 구글 사용자 정보를 조회한 뒤,
@@ -42,6 +50,44 @@ public class AuthService {
 
 		Member member = memberRepository.findBySocialId(userInfo.sub())
 			.orElseGet(() -> registerNewMember(userInfo));
+
+		return issueTokens(member);
+	}
+
+	/**
+	 * 인증된 이메일로 회원가입한다. 인증 완료 여부·이메일 중복을 확인하고,
+	 * 비밀번호를 암호화해 회원을 생성한 뒤 약관 동의를 저장하고 토큰을 발급한다.
+	 */
+	@Transactional
+	public AuthTokenResponse signup(final EmailSignupRequest request) {
+		if (!emailVerificationCodeStore.isVerified(request.email())) {
+			throw new JjinException(MemberErrorCode.EMAIL_NOT_VERIFIED);
+		}
+		if (memberRepository.existsByEmail(request.email())) {
+			throw new JjinException(MemberErrorCode.EMAIL_ALREADY_REGISTERED);
+		}
+
+		Member member = memberRepository.save(
+			Member.create(request.email(), passwordEncoder.encode(request.password()), Role.ONBOARDING)
+		);
+		termsService.saveAgreements(member.getId(), request.termsAgreements());
+		emailVerificationCodeStore.deleteVerified(request.email());
+
+		return issueTokens(member);
+	}
+
+	/**
+	 * 이메일/비밀번호 로그인. 자격증명을 검증하고 토큰을 발급한다.
+	 */
+	@Transactional(readOnly = true)
+	public AuthTokenResponse login(final LoginRequest request) {
+		Member member = memberRepository.findByEmail(request.email())
+			.orElseThrow(() -> new JjinException(MemberErrorCode.INVALID_CREDENTIALS));
+
+		if (member.getPassword() == null
+			|| !passwordEncoder.matches(request.password(), member.getPassword())) {
+			throw new JjinException(MemberErrorCode.INVALID_CREDENTIALS);
+		}
 
 		return issueTokens(member);
 	}

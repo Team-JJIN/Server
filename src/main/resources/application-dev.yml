@@ -19,12 +19,29 @@ spring:
       hibernate:
         format_sql: true
         default_batch_fetch_size: 100
+        type:
+          preferred_enum_jdbc_type: VARCHAR
     open-in-view: false
 
   data:
     redis:
       host: ${REDIS_HOST}
       port: 6379
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_APP_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
 
 logging:
   level:
@@ -48,6 +65,12 @@ oauth:
     redirect-uri: ${GOOGLE_REDIRECT_URL}
     token-uri: https://oauth2.googleapis.com/token
     userinfo-uri: https://www.googleapis.com/oauth2/v3/userinfo
+
+auth:
+  email:
+    code-length: 6
+    code-ttl-seconds: 300
+    verified-ttl-seconds: 1800
 
 springdoc:
   swagger-ui:
