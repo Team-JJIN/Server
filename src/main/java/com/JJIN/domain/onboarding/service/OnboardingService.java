@@ -1,5 +1,6 @@
 package com.JJIN.domain.onboarding.service;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -49,7 +50,7 @@ public class OnboardingService {
 
 		onboardingRequestValidator.validate(request);
 
-		TravelProfile profile = travelProfileRepository.save(toProfile(member, request));
+		TravelProfile profile = saveProfile(member, request);
 
 		// 역할 변경 및 토큰 재발급 (마지막 단계). 이후 실패 가능한 DB 작업을 두지 않는다.
 		AuthTokenResponse tokens = authService.changeRoleToMember(memberId);
@@ -62,6 +63,21 @@ public class OnboardingService {
 			tokens.refreshToken(),
 			tokens.role()
 		);
+	}
+
+	/**
+	 * existsByMemberId 검사와 저장 사이의 동시 요청은 막을 수 없으므로,
+	 * member_id 유니크 제약 위반을 중복 온보딩 예외로 바꿔준다.
+	 */
+	private TravelProfile saveProfile(
+		final Member member,
+		final OnboardingCompleteRequest request
+	) {
+		try {
+			return travelProfileRepository.save(toProfile(member, request));
+		} catch (DataIntegrityViolationException e) {
+			throw new JjinException(OnboardingErrorCode.ONBOARDING_ALREADY_COMPLETED);
+		}
 	}
 
 	private TravelProfile toProfile(
