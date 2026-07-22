@@ -19,6 +19,8 @@ spring:
       hibernate:
         format_sql: true
         default_batch_fetch_size: 100
+        type:
+          preferred_enum_jdbc_type: VARCHAR
     open-in-view: false
 
   data:
