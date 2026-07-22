@@ -32,7 +32,7 @@ public class SecurityConfig {
             "/api/auth/reissue",
             "/api/auth/email/**",
             "/api/auth/signup",
-            "/api/auth/terms",
+            "/api/terms",
             "/actuator/health"
     };
 
