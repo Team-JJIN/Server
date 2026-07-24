@@ -7,7 +7,6 @@ import java.util.List;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import com.JJIN.domain.onboarding.entity.enums.ExperienceLevel;
-import com.JJIN.domain.onboarding.entity.enums.Region;
 import com.JJIN.domain.onboarding.entity.enums.TransportMode;
 
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -19,13 +18,11 @@ import jakarta.validation.constraints.NotNull;
 public record OnboardingCompleteRequest(
 
 	@Schema(
-		description = "여행 지역. regionUndecided가 true면 반드시 null이어야 한다.",
-		example = "SEOUL",
-		nullable = true,
-		allowableValues = {"SEOUL", "BUSAN", "INCHEON", "JEJU", "JEONJU", "GYEONGJU",
-			"GANGNEUNG", "SOKCHO", "DAEGU", "GWANGJU", "YEOSU", "CHUNCHEON"}
+		description = "여행 지역 ID. regionUndecided가 true면 반드시 null이어야 한다.",
+		example = "1",
+		nullable = true
 	)
-	Region region,
+	Long regionId,
 
 	@Schema(description = "지역 미정 여부", example = "false")
 	@NotNull(message = "지역 미정 여부는 필수입니다.")

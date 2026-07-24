@@ -1,9 +1,12 @@
 package com.JJIN.domain.onboarding.controller.docs;
 
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
 
 import com.JJIN.domain.onboarding.dto.request.OnboardingCompleteRequest;
 import com.JJIN.domain.onboarding.dto.response.OnboardingCompleteResponse;
+import com.JJIN.domain.onboarding.dto.response.TravelRegionResponse;
 import com.JJIN.global.auth.dto.CurrentAuth;
 import com.JJIN.global.response.dto.SuccessResponse;
 
@@ -26,12 +29,12 @@ public interface OnboardingControllerDocs {
 	@Operation(
 		summary = "온보딩 여행 기본 정보 저장",
 		description = """
-			온보딩 S1~S4에서 수집한 여행 기본 정보를 마지막 '시작하기' 단계에서 한 번에 저장한다.
-			저장에 성공하면 회원 역할이 ONBOARDING에서 MEMBER로 변경되고, MEMBER 역할이 반영된 토큰이 재발급된다.
+			온보딩 S1~S4에서 수집한 여행 기본 정보를 첫 번째 여행 일정으로 저장한다.
+			회원 역할 변경과 토큰 재발급은 /api/auth/role API에서 별도로 처리한다.
 
 			요청 필드
-			- region: 여행 지역. SEOUL, BUSAN, INCHEON, JEJU, JEONJU, GYEONGJU, GANGNEUNG, SOKCHO, DAEGU, GWANGJU, YEOSU, CHUNCHEON
-			- regionUndecided: 지역 미정 여부. true면 region은 반드시 null, false면 region 필수
+			- regionId: 여행 지역 ID. regionUndecided가 true면 반드시 null, false면 regionId 필수
+			- regionUndecided: 지역 미정 여부
 			- startDate / endDate: 여행 기간. startDate는 Asia/Seoul 기준 오늘 이전 불가, endDate는 startDate 이상
 			- activityStartTime / activityEndTime: 하루 활동 시간(HH:mm). 시작 < 종료
 			- transportMode: 주 이동 수단 1개. WALKING, PUBLIC_TRANSIT, CAR
@@ -61,12 +64,9 @@ public interface OnboardingControllerDocs {
 				examples = @ExampleObject(value = """
 					{
 					  "status": 201,
-					  "message": "여행 기본 정보 설정을 완료했습니다.",
+					  "message": "첫 여행 일정을 생성했습니다.",
 					  "data": {
-					    "onboardingId": 1,
-					    "accessToken": "new-access-token",
-					    "refreshToken": "new-refresh-token",
-					    "role": "MEMBER"
+					    "travelPlanId": 1
 					  }
 					}
 					""")
@@ -111,22 +111,41 @@ public interface OnboardingControllerDocs {
 					""")
 			)
 		),
-		@ApiResponse(
-			responseCode = "409",
-			description = "이미 온보딩을 완료한 회원",
-			content = @Content(
-				mediaType = "application/json",
-				examples = @ExampleObject(value = """
-					{
-					  "status": 409,
-					  "message": "이미 온보딩을 완료한 회원입니다."
-					}
-					""")
-			)
-		)
 	})
 	ResponseEntity<SuccessResponse<OnboardingCompleteResponse>> completeOnboarding(
 		CurrentAuth currentAuth,
 		OnboardingCompleteRequest request
 	);
+
+	@Operation(
+		summary = "여행 지역 검색",
+		description = """
+			'기타' 지역 선택 시 여행 지역 표시명으로 검색한다.
+			keyword가 비어 있으면 빈 목록을 반환한다.
+			지역은 enum이 아니라 travel_region 테이블로 관리하며, TourAPI KorService2의 lDongRegnCd/lDongSignguCd를 함께 보관한다.
+			""",
+		security = @SecurityRequirement(name = "BearerAuth")
+	)
+	@ApiResponse(
+		responseCode = "200",
+		description = "여행 지역 검색 성공",
+		content = @Content(
+			mediaType = "application/json",
+			examples = @ExampleObject(value = """
+				{
+				  "status": 200,
+				  "message": "여행 지역 검색에 성공했습니다.",
+				  "data": [
+				    {
+				      "id": 1,
+				      "displayName": "서울",
+				      "lDongRegnCd": "11",
+				      "lDongSignguCd": "11000"
+				    }
+				  ]
+				}
+				""")
+		)
+	)
+	ResponseEntity<SuccessResponse<List<TravelRegionResponse>>> searchRegions(String keyword);
 }

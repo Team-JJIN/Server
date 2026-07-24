@@ -48,9 +48,9 @@ public class OnboardingRequestValidator {
 			throw new JjinException(OnboardingErrorCode.INVALID_REGION_SELECTION);
 		}
 		boolean undecided = request.isRegionUndecided();
-		boolean hasRegion = request.region() != null;
+		boolean hasRegion = request.regionId() != null;
 
-		if (undecided == hasRegion) { // 미정인데 지역이 있거나, 미정이 아닌데 지역이 없는 경우
+		if (undecided == hasRegion) {
 			throw new JjinException(OnboardingErrorCode.INVALID_REGION_SELECTION);
 		}
 	}
