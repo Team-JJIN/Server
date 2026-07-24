@@ -1,21 +1,23 @@
 package com.JJIN.domain.onboarding.service;
 
-import org.springframework.dao.DataIntegrityViolationException;
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.JJIN.domain.member.dto.response.AuthTokenResponse;
 import com.JJIN.domain.member.entity.Member;
 import com.JJIN.domain.member.exception.MemberErrorCode;
 import com.JJIN.domain.member.repository.MemberRepository;
-import com.JJIN.domain.member.service.AuthService;
 import com.JJIN.domain.onboarding.dto.request.ContentTypePreferenceRequest;
 import com.JJIN.domain.onboarding.dto.request.OnboardingCompleteRequest;
 import com.JJIN.domain.onboarding.dto.response.OnboardingCompleteResponse;
-import com.JJIN.domain.onboarding.entity.TravelProfile;
+import com.JJIN.domain.onboarding.dto.response.TravelRegionResponse;
+import com.JJIN.domain.onboarding.entity.TravelPlan;
+import com.JJIN.domain.onboarding.entity.TravelRegion;
 import com.JJIN.domain.onboarding.entity.enums.TravelSubcategory;
 import com.JJIN.domain.onboarding.exception.OnboardingErrorCode;
-import com.JJIN.domain.onboarding.repository.TravelProfileRepository;
+import com.JJIN.domain.onboarding.repository.TravelPlanRepository;
+import com.JJIN.domain.onboarding.repository.TravelRegionRepository;
 import com.JJIN.domain.onboarding.validator.OnboardingRequestValidator;
 import com.JJIN.global.exception.JjinException;
 
@@ -28,13 +30,13 @@ import lombok.extern.slf4j.Slf4j;
 public class OnboardingService {
 
 	private final MemberRepository memberRepository;
-	private final TravelProfileRepository travelProfileRepository;
+	private final TravelPlanRepository travelPlanRepository;
+	private final TravelRegionRepository travelRegionRepository;
 	private final OnboardingRequestValidator onboardingRequestValidator;
-	private final AuthService authService;
 
 	/**
-	 * 온보딩에서 수집한 여행 기본 정보를 저장하고, 회원 역할을 ONBOARDING에서 MEMBER로 변경한다.
-	 * 저장과 역할 변경은 하나의 트랜잭션으로 처리하며, 토큰 발급 이후에는 DB 작업을 두지 않는다.
+	 * 온보딩에서 수집한 여행 기본 정보를 첫 번째 여행 일정으로 저장한다.
+	 * 회원 role 변경 및 토큰 재발급은 /api/auth/role API에서 별도로 처리한다.
 	 */
 	@Transactional
 	public OnboardingCompleteResponse complete(
@@ -44,49 +46,35 @@ public class OnboardingService {
 		Member member = memberRepository.findById(memberId)
 			.orElseThrow(() -> new JjinException(MemberErrorCode.MEMBER_NOT_FOUND));
 
-		if (travelProfileRepository.existsByMemberId(memberId)) {
-			throw new JjinException(OnboardingErrorCode.ONBOARDING_ALREADY_COMPLETED);
-		}
-
 		onboardingRequestValidator.validate(request);
 
-		TravelProfile profile = saveProfile(member, request);
+		TravelPlan travelPlan = travelPlanRepository.save(toTravelPlan(member, request));
 
-		// 역할 변경 및 토큰 재발급 (마지막 단계). 이후 실패 가능한 DB 작업을 두지 않는다.
-		AuthTokenResponse tokens = authService.changeRoleToMember(memberId);
+		log.info("온보딩 여행 일정 생성 완료: memberId={}, travelPlanId={}", memberId, travelPlan.getId());
 
-		log.info("온보딩 완료: memberId={}, onboardingId={}", memberId, profile.getId());
-
-		return OnboardingCompleteResponse.of(
-			profile.getId(),
-			tokens.accessToken(),
-			tokens.refreshToken(),
-			tokens.role()
-		);
+		return OnboardingCompleteResponse.of(travelPlan.getId());
 	}
 
-	/**
-	 * existsByMemberId 검사와 저장 사이의 동시 요청은 막을 수 없으므로,
-	 * member_id 유니크 제약 위반을 중복 온보딩 예외로 바꿔준다.
-	 */
-	private TravelProfile saveProfile(
-		final Member member,
-		final OnboardingCompleteRequest request
-	) {
-		try {
-			return travelProfileRepository.save(toProfile(member, request));
-		} catch (DataIntegrityViolationException e) {
-			throw new JjinException(OnboardingErrorCode.ONBOARDING_ALREADY_COMPLETED);
+	@Transactional(readOnly = true)
+	public List<TravelRegionResponse> searchRegions(final String keyword) {
+		if (keyword == null || keyword.isBlank()) {
+			return List.of();
 		}
+		return travelRegionRepository.findTop20ByDisplayNameContainingOrderByDisplayNameAsc(keyword.trim())
+			.stream()
+			.map(TravelRegionResponse::from)
+			.toList();
 	}
 
-	private TravelProfile toProfile(
+	private TravelPlan toTravelPlan(
 		final Member member,
 		final OnboardingCompleteRequest request
 	) {
-		TravelProfile profile = TravelProfile.create(
+		TravelRegion region = resolveRegion(request);
+
+		TravelPlan travelPlan = TravelPlan.create(
 			member,
-			request.region(),
+			region,
 			request.isRegionUndecided(),
 			request.startDate(),
 			request.endDate(),
@@ -98,9 +86,17 @@ public class OnboardingService {
 
 		for (ContentTypePreferenceRequest preference : request.preferences()) {
 			for (TravelSubcategory subcategory : preference.subcategories()) {
-				profile.addPreference(preference.contentType(), subcategory);
+				travelPlan.addPreference(preference.contentType(), subcategory);
 			}
 		}
-		return profile;
+		return travelPlan;
+	}
+
+	private TravelRegion resolveRegion(final OnboardingCompleteRequest request) {
+		if (request.isRegionUndecided()) {
+			return null;
+		}
+		return travelRegionRepository.findById(request.regionId())
+			.orElseThrow(() -> new JjinException(OnboardingErrorCode.INVALID_REGION_SELECTION));
 	}
 }

@@ -21,11 +21,6 @@ public enum OnboardingErrorCode implements BaseCode {
 	MISSING_SUBCATEGORY(HttpStatus.BAD_REQUEST, "선택한 TourAPI 관광타입에는 세부 취향이 최소 1개 있어야 합니다."),
 	INVALID_SUBCATEGORY(HttpStatus.BAD_REQUEST, "TourAPI 관광타입과 세부 취향 선택이 올바르지 않습니다."),
 	INVALID_ALL_FOOD_SELECTION(HttpStatus.BAD_REQUEST, "'다 좋아요'는 다른 음식점 세부 취향과 함께 선택할 수 없습니다."),
-
-	/*
-	409 CONFLICT
-	 */
-	ONBOARDING_ALREADY_COMPLETED(HttpStatus.CONFLICT, "이미 온보딩을 완료한 회원입니다."),
 	;
 
 	private final HttpStatus httpStatus;

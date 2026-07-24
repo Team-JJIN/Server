@@ -8,7 +8,6 @@ import java.util.List;
 
 import com.JJIN.domain.member.entity.Member;
 import com.JJIN.domain.onboarding.entity.enums.ExperienceLevel;
-import com.JJIN.domain.onboarding.entity.enums.Region;
 import com.JJIN.domain.onboarding.entity.enums.TourApiContentType;
 import com.JJIN.domain.onboarding.entity.enums.TransportMode;
 import com.JJIN.domain.onboarding.entity.enums.TravelSubcategory;
@@ -24,42 +23,34 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * 회원의 여행 기본 정보(지역, 기간, 활동 시간, 이동 수단, 경험 밀도). 회원당 1개만 존재한다.
- * 최초 값은 온보딩에서 수집한다.
+ * 회원의 여행 일정. 온보딩을 정상 진행하면 첫 번째 여행 일정이 생성된다.
  */
 @Entity
 @Getter
-@Table(
-	name = "travel_profile",
-	uniqueConstraints = @UniqueConstraint(
-		name = "uk_travel_profile_member",
-		columnNames = "member_id"
-	)
-)
+@Table(name = "travel_plan")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class TravelProfile extends BaseTimeEntity {
+public class TravelPlan extends BaseTimeEntity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	@OneToOne(fetch = FetchType.LAZY, optional = false)
-	@JoinColumn(name = "member_id", nullable = false, unique = true)
+	@ManyToOne(fetch = FetchType.LAZY, optional = false)
+	@JoinColumn(name = "member_id", nullable = false)
 	private Member member;
 
-	@Enumerated(EnumType.STRING)
-	@Column(name = "region")
-	private Region region;
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "region_id")
+	private TravelRegion region;
 
 	@Column(name = "region_undecided", nullable = false)
 	private boolean regionUndecided;
@@ -85,7 +76,7 @@ public class TravelProfile extends BaseTimeEntity {
 	private ExperienceLevel experienceLevel;
 
 	@OneToMany(
-		mappedBy = "profile",
+		mappedBy = "travelPlan",
 		cascade = CascadeType.ALL,
 		orphanRemoval = true,
 		fetch = FetchType.LAZY
@@ -93,9 +84,9 @@ public class TravelProfile extends BaseTimeEntity {
 	private List<TravelPreference> preferences = new ArrayList<>();
 
 	@Builder(access = AccessLevel.PRIVATE)
-	private TravelProfile(
+	private TravelPlan(
 		final Member member,
-		final Region region,
+		final TravelRegion region,
 		final boolean regionUndecided,
 		final LocalDate startDate,
 		final LocalDate endDate,
@@ -115,9 +106,9 @@ public class TravelProfile extends BaseTimeEntity {
 		this.experienceLevel = experienceLevel;
 	}
 
-	public static TravelProfile create(
+	public static TravelPlan create(
 		final Member member,
-		final Region region,
+		final TravelRegion region,
 		final boolean regionUndecided,
 		final LocalDate startDate,
 		final LocalDate endDate,
@@ -126,7 +117,7 @@ public class TravelProfile extends BaseTimeEntity {
 		final TransportMode transportMode,
 		final ExperienceLevel experienceLevel
 	) {
-		return TravelProfile.builder()
+		return TravelPlan.builder()
 			.member(member)
 			.region(region)
 			.regionUndecided(regionUndecided)

@@ -20,15 +20,15 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * 회원이 선택한 여행 취향 한 건(TourAPI 관광타입 + 온보딩 세부 취향).
+ * 여행 일정에 선택된 취향 한 건(TourAPI 관광타입 + 온보딩 세부 취향).
  */
 @Entity
 @Getter
 @Table(
 	name = "travel_preference",
 	uniqueConstraints = @UniqueConstraint(
-		name = "uk_travel_preference_profile_content_type_subcategory",
-		columnNames = {"profile_id", "content_type", "subcategory"}
+		name = "uk_travel_preference_plan_content_type_subcategory",
+		columnNames = {"travel_plan_id", "content_type", "subcategory"}
 	)
 )
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -39,8 +39,8 @@ public class TravelPreference {
 	private Long id;
 
 	@ManyToOne(fetch = FetchType.LAZY, optional = false)
-	@JoinColumn(name = "profile_id", nullable = false)
-	private TravelProfile profile;
+	@JoinColumn(name = "travel_plan_id", nullable = false)
+	private TravelPlan travelPlan;
 
 	@Enumerated(EnumType.STRING)
 	@Column(name = "content_type", nullable = false)
@@ -51,20 +51,20 @@ public class TravelPreference {
 	private TravelSubcategory subcategory;
 
 	private TravelPreference(
-		final TravelProfile profile,
+		final TravelPlan travelPlan,
 		final TourApiContentType contentType,
 		final TravelSubcategory subcategory
 	) {
-		this.profile = profile;
+		this.travelPlan = travelPlan;
 		this.contentType = contentType;
 		this.subcategory = subcategory;
 	}
 
 	static TravelPreference create(
-		final TravelProfile profile,
+		final TravelPlan travelPlan,
 		final TourApiContentType contentType,
 		final TravelSubcategory subcategory
 	) {
-		return new TravelPreference(profile, contentType, subcategory);
+		return new TravelPreference(travelPlan, contentType, subcategory);
 	}
 }
