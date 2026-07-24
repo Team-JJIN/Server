@@ -59,9 +59,9 @@ public record OnboardingCompleteRequest(
 	@NotNull(message = "이동 수단은 필수입니다.")
 	TransportMode transportMode,
 
-	@Schema(description = "취향 대분류 2~4개와 각 대분류별 중분류 목록")
+	@Schema(description = "선택 가능한 TourAPI 관광타입 2~4개와 각 관광타입별 세부 취향 목록")
 	@NotEmpty(message = "취향은 최소 1개 이상 선택해야 합니다.")
-	List<@Valid @NotNull CategoryPreferenceRequest> preferences,
+	List<@Valid @NotNull ContentTypePreferenceRequest> preferences,
 
 	@Schema(
 		description = "여행 경험 밀도",

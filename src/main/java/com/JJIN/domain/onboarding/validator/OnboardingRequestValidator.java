@@ -3,16 +3,15 @@ package com.JJIN.domain.onboarding.validator;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 import org.springframework.stereotype.Component;
 
-import com.JJIN.domain.onboarding.dto.request.CategoryPreferenceRequest;
+import com.JJIN.domain.onboarding.dto.request.ContentTypePreferenceRequest;
 import com.JJIN.domain.onboarding.dto.request.OnboardingCompleteRequest;
-import com.JJIN.domain.onboarding.entity.enums.TravelCategory;
+import com.JJIN.domain.onboarding.entity.enums.TourApiContentType;
 import com.JJIN.domain.onboarding.entity.enums.TravelSubcategory;
 import com.JJIN.domain.onboarding.exception.OnboardingErrorCode;
 import com.JJIN.global.exception.JjinException;
@@ -29,8 +28,8 @@ public class OnboardingRequestValidator {
 
 	public static final ZoneId TRAVEL_ZONE = ZoneId.of("Asia/Seoul");
 
-	private static final int MIN_CATEGORY_COUNT = 2;
-	private static final int MAX_CATEGORY_COUNT = 4;
+	private static final int MIN_CONTENT_TYPE_COUNT = 2;
+	private static final int MAX_CONTENT_TYPE_COUNT = 4;
 
 	private final Clock clock;
 
@@ -84,27 +83,31 @@ public class OnboardingRequestValidator {
 	}
 
 	/**
-	 * 취향 대분류 개수/중복, 중분류 존재·중복·소속 관계를 검증한다.
+	 * TourAPI 관광타입 개수/중복/선택 가능 여부, 세부 취향 존재·중복·소속 관계를 검증한다.
 	 */
 	private void validatePreferences(final OnboardingCompleteRequest request) {
-		List<CategoryPreferenceRequest> preferences = request.preferences();
+		List<ContentTypePreferenceRequest> preferences = request.preferences();
 
 		if (preferences == null
-			|| preferences.size() < MIN_CATEGORY_COUNT
-			|| preferences.size() > MAX_CATEGORY_COUNT) {
-			throw new JjinException(OnboardingErrorCode.INVALID_CATEGORY_COUNT);
+			|| preferences.size() < MIN_CONTENT_TYPE_COUNT
+			|| preferences.size() > MAX_CONTENT_TYPE_COUNT) {
+			throw new JjinException(OnboardingErrorCode.INVALID_CONTENT_TYPE_COUNT);
 		}
 
-		Set<TravelCategory> categories = new HashSet<>();
+		Set<TourApiContentType> contentTypes = new HashSet<>();
 		Set<TravelSubcategory> seenSubcategories = new HashSet<>();
 
-		for (CategoryPreferenceRequest preference : preferences) {
-			TravelCategory category = preference.category();
-			if (category == null) {
-				throw new JjinException(OnboardingErrorCode.INVALID_CATEGORY_COUNT);
+		for (ContentTypePreferenceRequest preference : preferences) {
+			if (preference == null) {
+				throw new JjinException(OnboardingErrorCode.INVALID_CONTENT_TYPE_COUNT);
 			}
-			if (!categories.add(category)) { // 대분류 중복
-				throw new JjinException(OnboardingErrorCode.INVALID_CATEGORY_COUNT);
+
+			TourApiContentType contentType = preference.contentType();
+			if (contentType == null || !contentType.isPreferenceSelectable()) {
+				throw new JjinException(OnboardingErrorCode.INVALID_CONTENT_TYPE_COUNT);
+			}
+			if (!contentTypes.add(contentType)) {
+				throw new JjinException(OnboardingErrorCode.INVALID_CONTENT_TYPE_COUNT);
 			}
 
 			List<TravelSubcategory> subcategories = preference.subcategories();
@@ -112,29 +115,27 @@ public class OnboardingRequestValidator {
 				throw new JjinException(OnboardingErrorCode.MISSING_SUBCATEGORY);
 			}
 
-			List<TravelSubcategory> ownSubcategories = new ArrayList<>();
 			for (TravelSubcategory subcategory : subcategories) {
-				if (subcategory == null || !subcategory.belongsTo(category)) {
+				if (subcategory == null || !subcategory.belongsTo(contentType)) {
 					throw new JjinException(OnboardingErrorCode.INVALID_SUBCATEGORY);
 				}
-				if (!seenSubcategories.add(subcategory)) { // 중분류 중복
+				if (!seenSubcategories.add(subcategory)) {
 					throw new JjinException(OnboardingErrorCode.INVALID_SUBCATEGORY);
 				}
-				ownSubcategories.add(subcategory);
 			}
 
-			validateAllFoodSelection(category, ownSubcategories);
+			validateAllFoodSelection(contentType, subcategories);
 		}
 	}
 
 	/**
-	 * LIKE_ALL_FOOD는 단독으로만 선택할 수 있다.
+	 * LIKE_ALL_FOOD는 RESTAURANT 타입 안에서 단독으로만 선택할 수 있다.
 	 */
 	private void validateAllFoodSelection(
-		final TravelCategory category,
+		final TourApiContentType contentType,
 		final List<TravelSubcategory> subcategories
 	) {
-		if (category != TravelCategory.FOOD) {
+		if (contentType != TourApiContentType.RESTAURANT) {
 			return;
 		}
 		if (subcategories.contains(TravelSubcategory.LIKE_ALL_FOOD) && subcategories.size() > 1) {

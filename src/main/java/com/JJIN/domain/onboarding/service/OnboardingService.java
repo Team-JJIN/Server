@@ -9,7 +9,7 @@ import com.JJIN.domain.member.entity.Member;
 import com.JJIN.domain.member.exception.MemberErrorCode;
 import com.JJIN.domain.member.repository.MemberRepository;
 import com.JJIN.domain.member.service.AuthService;
-import com.JJIN.domain.onboarding.dto.request.CategoryPreferenceRequest;
+import com.JJIN.domain.onboarding.dto.request.ContentTypePreferenceRequest;
 import com.JJIN.domain.onboarding.dto.request.OnboardingCompleteRequest;
 import com.JJIN.domain.onboarding.dto.response.OnboardingCompleteResponse;
 import com.JJIN.domain.onboarding.entity.TravelProfile;
@@ -96,9 +96,9 @@ public class OnboardingService {
 			request.experienceLevel()
 		);
 
-		for (CategoryPreferenceRequest preference : request.preferences()) {
+		for (ContentTypePreferenceRequest preference : request.preferences()) {
 			for (TravelSubcategory subcategory : preference.subcategories()) {
-				profile.addPreference(preference.category(), subcategory);
+				profile.addPreference(preference.contentType(), subcategory);
 			}
 		}
 		return profile;

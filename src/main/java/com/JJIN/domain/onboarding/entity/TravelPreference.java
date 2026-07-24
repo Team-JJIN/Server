@@ -1,6 +1,6 @@
 package com.JJIN.domain.onboarding.entity;
 
-import com.JJIN.domain.onboarding.entity.enums.TravelCategory;
+import com.JJIN.domain.onboarding.entity.enums.TourApiContentType;
 import com.JJIN.domain.onboarding.entity.enums.TravelSubcategory;
 
 import jakarta.persistence.Column;
@@ -20,15 +20,15 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * 회원이 선택한 여행 취향 한 건(대분류 + 중분류).
+ * 회원이 선택한 여행 취향 한 건(TourAPI 관광타입 + 온보딩 세부 취향).
  */
 @Entity
 @Getter
 @Table(
 	name = "travel_preference",
 	uniqueConstraints = @UniqueConstraint(
-		name = "uk_travel_preference_profile_category_subcategory",
-		columnNames = {"profile_id", "category", "subcategory"}
+		name = "uk_travel_preference_profile_content_type_subcategory",
+		columnNames = {"profile_id", "content_type", "subcategory"}
 	)
 )
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -43,8 +43,8 @@ public class TravelPreference {
 	private TravelProfile profile;
 
 	@Enumerated(EnumType.STRING)
-	@Column(name = "category", nullable = false)
-	private TravelCategory category;
+	@Column(name = "content_type", nullable = false)
+	private TourApiContentType contentType;
 
 	@Enumerated(EnumType.STRING)
 	@Column(name = "subcategory", nullable = false)
@@ -52,19 +52,19 @@ public class TravelPreference {
 
 	private TravelPreference(
 		final TravelProfile profile,
-		final TravelCategory category,
+		final TourApiContentType contentType,
 		final TravelSubcategory subcategory
 	) {
 		this.profile = profile;
-		this.category = category;
+		this.contentType = contentType;
 		this.subcategory = subcategory;
 	}
 
 	static TravelPreference create(
 		final TravelProfile profile,
-		final TravelCategory category,
+		final TourApiContentType contentType,
 		final TravelSubcategory subcategory
 	) {
-		return new TravelPreference(profile, category, subcategory);
+		return new TravelPreference(profile, contentType, subcategory);
 	}
 }

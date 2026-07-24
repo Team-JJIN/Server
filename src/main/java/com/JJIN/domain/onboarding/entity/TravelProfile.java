@@ -9,8 +9,8 @@ import java.util.List;
 import com.JJIN.domain.member.entity.Member;
 import com.JJIN.domain.onboarding.entity.enums.ExperienceLevel;
 import com.JJIN.domain.onboarding.entity.enums.Region;
+import com.JJIN.domain.onboarding.entity.enums.TourApiContentType;
 import com.JJIN.domain.onboarding.entity.enums.TransportMode;
-import com.JJIN.domain.onboarding.entity.enums.TravelCategory;
 import com.JJIN.domain.onboarding.entity.enums.TravelSubcategory;
 import com.JJIN.global.common.BaseTimeEntity;
 
@@ -142,8 +142,8 @@ public class TravelProfile extends BaseTimeEntity {
 	/**
 	 * 세부 취향을 추가하며 양방향 연관관계를 함께 맞춘다.
 	 */
-	public void addPreference(final TravelCategory category, final TravelSubcategory subcategory) {
-		TravelPreference preference = TravelPreference.create(this, category, subcategory);
+	public void addPreference(final TourApiContentType contentType, final TravelSubcategory subcategory) {
+		TravelPreference preference = TravelPreference.create(this, contentType, subcategory);
 		this.preferences.add(preference);
 	}
 
