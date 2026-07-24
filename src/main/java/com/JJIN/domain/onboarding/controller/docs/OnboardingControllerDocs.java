@@ -35,17 +35,19 @@ public interface OnboardingControllerDocs {
 			- startDate / endDate: 여행 기간. startDate는 Asia/Seoul 기준 오늘 이전 불가, endDate는 startDate 이상
 			- activityStartTime / activityEndTime: 하루 활동 시간(HH:mm). 시작 < 종료
 			- transportMode: 주 이동 수단 1개. WALKING, PUBLIC_TRANSIT, CAR
-			- preferences: 취향 대분류 2~4개(중복 불가). 각 대분류마다 그 대분류에 속한 중분류를 1개 이상(중복 불가) 선택
-			  - category: FOOD, EXPERIENCE, NATURE, HISTORY, CULTURE, SHOPPING, FESTIVAL, LEISURE
-			  - subcategories: FOOD(KOREAN_FOOD, CAFE_TEAHOUSE, PUB, LIKE_ALL_FOOD),
-			    EXPERIENCE(TRADITIONAL_EXPERIENCE, TEMPLE_STAY, UNIQUE_EXPERIENCE),
-			    NATURE(MOUNTAIN_FOREST, SEA_BEACH, LAKE_RIVER, ISLAND, PARK),
-			    HISTORY(PALACE, HISTORIC_SITE, MUSEUM, TRADITIONAL_VILLAGE),
-			    CULTURE(GALLERY, PERFORMANCE_MUSICAL, STREET_ART, TEMPLE),
+			- preferences: 선택 가능한 TourAPI 관광타입 2~4개(중복 불가). 각 관광타입마다 그 타입에 속한 세부 취향을 1개 이상(중복 불가) 선택
+			  - contentType: TOURIST_ATTRACTION(12), CULTURAL_FACILITY(14), FESTIVAL_EVENT(15), LEISURE_SPORTS(28), SHOPPING(38), RESTAURANT(39)
+			  - TRAVEL_COURSE(25), LODGING(32)는 TourAPI enum에는 있지만 온보딩 취향 선택에서는 거부
+			  - subcategories:
+			    RESTAURANT(KOREAN_FOOD, CAFE_TEAHOUSE, PUB, LIKE_ALL_FOOD),
+			    TOURIST_ATTRACTION(TRADITIONAL_EXPERIENCE, TEMPLE_STAY, UNIQUE_EXPERIENCE, MOUNTAIN_FOREST, SEA_BEACH, LAKE_RIVER, ISLAND, PARK, PALACE, HISTORIC_SITE, TRADITIONAL_VILLAGE, STREET_ART, TEMPLE),
+			    CULTURAL_FACILITY(MUSEUM, GALLERY),
+			    FESTIVAL_EVENT(PERFORMANCE_MUSICAL, FESTIVAL_EVENT, PERFORMANCE_EVENT, FIREWORKS, NIGHT_MARKET),
 			    SHOPPING(TRADITIONAL_MARKET, LOCAL_SHOP, DUTY_FREE, VINTAGE),
-			    FESTIVAL(FESTIVAL_EVENT, PERFORMANCE_EVENT, FIREWORKS, NIGHT_MARKET),
-			    LEISURE(SURFING, SKIING, HIKING, CYCLING, WATER_SPORTS)
-			  - LIKE_ALL_FOOD는 다른 FOOD 중분류와 함께 선택할 수 없다.
+			    LEISURE_SPORTS(SURFING, SKIING, HIKING, CYCLING, WATER_SPORTS)
+			  - LIKE_ALL_FOOD는 RESTAURANT 안에서 다른 세부 취향과 함께 선택할 수 없다.
+			  - 내부적으로 각 세부 취향은 TourAPI contentTypeId와 lclsSystm1/2/3 검색 조건으로 매핑된다.
+			  - 요청 예: {"contentType":"RESTAURANT","subcategories":["KOREAN_FOOD","CAFE_TEAHOUSE"]}
 			- experienceLevel: LIGHT, NORMAL, DEEP
 			""",
 		security = @SecurityRequirement(name = "BearerAuth")
@@ -78,7 +80,7 @@ public interface OnboardingControllerDocs {
 				examples = @ExampleObject(value = """
 					{
 					  "status": 400,
-					  "message": "취향 대분류는 중복 없이 2~4개를 선택해야 합니다."
+					  "message": "선택 가능한 TourAPI 관광타입은 중복 없이 2~4개를 선택해야 합니다."
 					}
 					""")
 			)
